@@ -1,7 +1,6 @@
 import dash
 import dash_html_components as html
 import dash_core_components as dcc
-import dash_colorscales
 from dash.dependencies import Input, Output, State
 
 import numpy as np
