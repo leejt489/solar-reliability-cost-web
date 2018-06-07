@@ -10,7 +10,10 @@ import json
 
 app = dash.Dash()
 app.scripts.config.serve_locally=True
-app.css.append_css({"external_url": "https://codepen.io/chriddyp/pen/dZVMbK.css"})
+app.css.append_css({
+    'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'
+})
+#app.css.append_css({"external_url": "https://codepen.io/chriddyp/pen/dZVMbK.css"})
 
 DEFAULT_COLORSCALE = ["#2a4858", "#265465", "#1e6172", "#106e7c", "#007b84", \
 	"#00898a", "#00968e", "#19a390", "#31b08f", "#4abd8c", "#64c988", \
@@ -22,30 +25,114 @@ mapboxToken = 'pk.eyJ1IjoiY2hyaWRkeXAiLCJhIjoiY2oyY2M4YW55MDF1YjMzbzhmemIzb290Ni
 
 reliabilityFrontiers = json.load(open('reliabilityFrontiers_constant_africa_1.json'))
 
+#Technical parameters
 sampleReliabilities = 1-np.divide(0.1,np.power(2.,np.arange(-2,11)))
+DEFAULT_DAILY_LOAD = 8.2 # kWh/day
+DEFAULT_PEAK_CAPACITY = 2 #kW
+DEFAULT_SOLAR_DERATE = 85 #percent
+DEFAULT_BATTERY_LIFETIME = 10 #years
 
-styles = {
-    'pre': {
-        'border': 'thin lightgrey solid',
-        'overflowX': 'scroll'
-    }
-}
+#Economic parameters
+DEFAULT_BATTERY_COST = 400 #$/kWh
+DEFAULT_SOLAR_COST = 1000 #$/kW
+DEFAULT_CHARGE_CONTROLLER_COST = 200 #$/kW
+DEFAULT_CAPACITY_COST = 1300 #$/kW of peak load rest
+DEFAULT_FIXED_COST = 0 #$
+DEFAULT_OM_FACTOR = 5 #(%)
+DEFAULT_TERM = 20 #years
+DEFAULT_DISCOUNT_RATE= 10 #per year
 
 app.layout = html.Div([
+    html.H1('[Under Construction]'),
     html.H1('Estimated Cost of Decentralized Solar Power Systems in sub-Saharan Africa'),
     html.Hr(),
     html.Div(
         children=[
-            html.P('Target reliability (Fraction of Demand Served)'),
-            dcc.Slider(
-                id='sliderReliability',
-                min=np.amin(sampleReliabilities),
-                max=np.amax(sampleReliabilities),
-                value=sampleReliabilities[round(len(sampleReliabilities)/2)],
-                step=None,
-                marks={str(r): str(r) for r in sampleReliabilities}
-            ),
-            html.P('Map of levelized cost of electricity (LCOE)'),
+            html.H2('Parameters'),
+            html.Button(id='buttonUpdateMap', n_clicks=0, children='Update Map'),
+            html.Hr(),
+            html.Div(
+                children=[
+                    html.Div(
+                        children=[
+                            html.H3('Technical'),
+                            html.Label('Target reliability (Fraction of Demand Served)'),
+                            html.Div(children=[dcc.Slider(
+                                id='sliderReliability',
+                                min=np.amin(sampleReliabilities),
+                                max=np.amax(sampleReliabilities),
+                                value=sampleReliabilities[round(len(sampleReliabilities)/2)],
+                                step=None,
+                                marks={str(r): str(r) for r in sampleReliabilities},
+                            )],style={'padding-bottom':20}),
+                            html.Label('Daily Load (kWh/day)'),
+                            dcc.Input(
+                                id='inputDailyLoad',type='number',value=DEFAULT_DAILY_LOAD
+                            ),
+                            html.Label('Peak Capacity (kW)'),
+                            dcc.Input(
+                                id='inputPeakCapacity',type='number',value=DEFAULT_PEAK_CAPACITY
+                            ),
+                            html.Label('Solar Derating (%)'),
+                            dcc.Input(
+                                id='inputSolarDerate',type='number',value=DEFAULT_SOLAR_DERATE,
+                                    min=0,max=100
+                            ),
+                            html.Label('Battery Lifetime (yrs)'),
+                            dcc.Input(
+                                id='inputBatteryLifetime',type='number',value=DEFAULT_BATTERY_LIFETIME
+                            )
+                        ],
+                        className="six columns"
+                    ),
+                    html.Div(
+                        children=[
+                            html.H3('Economic'),
+                            html.Label('Battery Cost (USD/kWh)'),
+                            dcc.Input(
+                                id='inputBatteryCost',type='number',value=DEFAULT_BATTERY_COST
+                            ),
+                            html.Label('Solar Cost (USD/kW, including racking'),
+                            dcc.Input(
+                                id='inputSolarCost',type='number',value=DEFAULT_SOLAR_COST
+                            ),
+                            html.Label('Charge Controller Cost (USD/kW)'),
+                            dcc.Input(
+                                id='inputChargeControllerCost',type='number',
+                                value=DEFAULT_CHARGE_CONTROLLER_COST
+                            ),
+                            html.Label('Capacity Cost (USD/kW) - Includes inverter/DC power supply, balance-of-system, etc.; i.e. variable costs per peak capacity'),
+                            dcc.Input(
+                                id='inputCapacityCost',type='number',value=DEFAULT_CAPACITY_COST
+                            ),
+                            html.Label('Additional Fixed Cost (USD)'),
+                            dcc.Input(
+                                id='inputFixedCost',type='number',value=DEFAULT_FIXED_COST
+                            ),
+                            html.Label('Operations and Maintenance Factor (% of total capital cost)'),
+                            dcc.Input(
+                                id='inputOMFactor',type='number',value=DEFAULT_OM_FACTOR
+                            ),
+                            html.Label('Project Term (yrs)'),
+                            dcc.Input(
+                                id='inputTerm',type='number',value=DEFAULT_TERM
+                            ),
+                            html.Label('Discount Rate (%)'),
+                            dcc.Input(
+                                id='inputDiscountRate',type='number',value=DEFAULT_DISCOUNT_RATE,
+                                    min=0,max=100
+                            )
+                        ],
+                        className="six columns"
+                    )
+                ]
+            )
+        ],
+        className='four columns'
+    ),
+    html.Div(
+        children=[
+            html.H2('Map of levelized cost of electricity (LCOE)'),
             dcc.Graph(
                 id='map',
                 #animate=True,
@@ -55,7 +142,6 @@ app.layout = html.Div([
                         'mapbox': {
                             'layers': [],
                             'accesstoken': mapboxToken,
-                            'style': 'light',
                             'center': {
                                 'lat': 0,
                                 'lon': 20,
@@ -73,27 +159,35 @@ app.layout = html.Div([
 
 @app.callback(
     dash.dependencies.Output('map','figure'),
-    [dash.dependencies.Input('sliderReliability','value')],
-    [State('map', 'figure')]
+    [Input('buttonUpdateMap','n_clicks')],
+    [
+        State('sliderReliability','value'),
+        State('inputDailyLoad','value'),
+        State('inputPeakCapacity','value'),
+        State('inputSolarDerate','value'),
+        State('inputBatteryLifetime','value'),
+        State('inputBatteryCost','value'),
+        State('inputSolarCost','value'),
+        State('inputChargeControllerCost','value'),
+        State('inputCapacityCost','value'),
+        State('inputFixedCost','value'),
+        State('inputOMFactor','value'),
+        State('inputTerm','value'),
+        State('inputDiscountRate','value'),
+        State('map', 'figure')
+    ]
 )
-def display_map(reliability,figure):
+def display_map(n_clicks,reliability,dailyLoad,peakCapacity,solarDerate,
+    batteryLifetime,storageCost,solarCost,chargeControllerCost,capacityCost,
+    fixedCost,oAndMFactor,term,discountRate,figure):
 
-    #print(reliability)
+    #Convert percentage to per unit
+    discountRate = discountRate/100
+    solarDerate = solarDerate/100
+    oAndMFactor = oAndMFactor/100
 
-    storageCost = 400 #$/kWh
-    solarCost = 1000 #$/kW
-    dailyLoad = 8.2 # kWh/day
-    peakLoad = 2 #kW
-    boSCost = (300+1000)*peakLoad #soft and hardware costs, $300 per kW inverter + $1000 rest
-    oAndMFactor = 0.05 #per unit of total capital cost per year
-    term = 20 #years
-    discountRate = 0.1 #per year
-    batteryLifetime = 10 #years
-    solarDerate = 0.85
-    chargeControllerCost = 200; # $/kW (gets added to solarCost)
-
-    solarCost = solarCost/solarDerate+chargeControllerCost #Solar lifetime assumed to be term
-    storageCost = storageCost*(1-(1-discountRate)**term)/(1-(1-discountRate)**batteryLifetime) #Includes replacement cost of storage
+    solarTotalCost = solarCost/solarDerate+chargeControllerCost #Solar lifetime assumed to be term
+    storageTotalCost = storageCost*(1-(1-discountRate)**term)/(1-(1-discountRate)**batteryLifetime) #Includes replacement cost of storage
     crf = (discountRate*(1+discountRate)**term)/(((1+discountRate)**term)-1)
 
     resolution = 1
@@ -109,14 +203,18 @@ def display_map(reliability,figure):
         lonArray.append(rf['lon'])
 
         #Calculate the LCOE
-        storCost = np.array(rf['rf'][rKey]['stor'])*storageCost
-        solCost = np.array(rf['rf'][rKey]['sol'])*solarCost
-        minSolStorCost = np.amin(storCost+solCost)
-        capitalCost = minSolStorCost+boSCost
+        storVals = np.array(rf['rf'][rKey]['stor'])*dailyLoad
+        storCost = storVals*storageCost
+        solVals = np.array(rf['rf'][rKey]['sol'])*dailyLoad
+        solCost = solVals*solarCost
+        minInd = np.argmin(storCost+solCost)
+        capitalCost = storCost[minInd]+solCost[minInd]+peakCapacity*capacityCost+fixedCost
         LCOEVal = (crf+oAndMFactor)*capitalCost/365/dailyLoad/reliability
 
         LCOE.append(LCOEVal)
-        hoverText.append(('LCOE: {:0.3f}').format(LCOEVal))
+        hoverText.append(('Lat: {}<br>Lon: {}<br>LCOE: {:0.3f}<br>kW PV: {:0.2f}<br>kWh Stor: {:0.2f}<br>Capital Cost: {}').format(
+            rf['lat'],rf['lon'],LCOEVal,solVals[minInd],storVals[minInd],round(capitalCost)
+        ))
 
     (_,binEdges) = np.histogram(LCOE,len(colorscale))
     #for edge in binEdges:
@@ -206,9 +304,10 @@ def display_map(reliability,figure):
             }
         })
 
-    for i in range(len(geoJSONBinned)):
-        with open(('debug/geojsonOut_{}.json').format(i),'w') as outfile:
-            json.dump(geoJSONBinned[i],outfile)
+    #Dump geojson for debugging
+    # for i in range(len(geoJSONBinned)):
+    #     with open(('debug/geojsonOut_{}.json').format(i),'w') as outfile:
+    #         json.dump(geoJSONBinned[i],outfile)
 
     for i in range(len(colorscale)):
         geoLayer = dict(
@@ -222,10 +321,6 @@ def display_map(reliability,figure):
 
     fig = dict(data=data, layout=layout)
     return fig
-
-app.css.append_css({
-    "external_url": "https://codepen.io/chriddyp/pen/dZVMbK.css"
-})
 
 if __name__ == '__main__':
     app.run_server(debug=True)
