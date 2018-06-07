@@ -7,8 +7,9 @@ import numpy as np
 import json
 
 
-app = dash.Dash()
-app.scripts.config.serve_locally=True
+app = dash.Dash(__name__)
+server = app.server
+#app.scripts.config.serve_locally=True
 app.css.append_css({
     'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'
 })
