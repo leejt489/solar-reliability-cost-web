@@ -10,7 +10,7 @@ parameterSectionTechnicalItems=[
     html.H3('Technical'),
     html.Hr(),
     html.Div(
-        className='row col-sm-12',
+        #className='row col-sm-12',
         children=[
             html.Label('Target reliability (Fraction of Demand Served)'),
             html.Div(children=[dcc.Slider(
@@ -206,19 +206,19 @@ layout = html.Div(
                             id='map',
                             #animate=True,
                             figure = {
-                                'data': [],
-                                'layout': {
-                                    'mapbox': {
-                                        'layers': [],
-                                        'accesstoken': MAPBOX_TOKEN,
-                                        'center': {
-                                            'lat': 0,
-                                            'lon': 20,
-                                        },
-                                        'zoom': 2,
-                                        'pitch': 0
-                                    }
-                                }
+                                'data': []#,
+                                # 'layout': {
+                                #     'mapbox': {
+                                #         'layers': [],
+                                #         'accesstoken': MAPBOX_TOKEN,
+                                #         'center': {
+                                #             'lat': 0,
+                                #             'lon': 20,
+                                #         },
+                                #         'zoom': 2,
+                                #         'pitch': 0
+                                #     }
+                                # }
                             })
                     ]
                 )

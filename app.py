@@ -1,5 +1,6 @@
 import dash
 from dash.dependencies import Input, Output, State
+import dash_core_components as dcc
 
 import numpy as np
 import json
@@ -14,6 +15,7 @@ colorscale = DEFAULT_COLORSCALE
 reliabilityFrontiers = json.load(open('reliabilityFrontiers_constant_africa_1.json'))
 
 app = dash.Dash(__name__)
+app.title = 'Cost of Reliability'
 server = app.server
 app.css.append_css({
     #'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'
@@ -57,7 +59,7 @@ def display_value(text):
     dash.dependencies.Output('map','figure'),
     [
         Input('buttonUpdateMap','n_clicks'),
-        Input('buttonUpdateMap','n_clicks')
+        Input('buttonUpdateMap2','n_clicks')
     ],
     [
         State('sliderReliability','value'),
@@ -79,7 +81,7 @@ def display_value(text):
 )
 def display_map(_,__,reliabilityExponent,dailyLoad,peakCapacity,solarDerate,
     batteryLifetime,storageCost,solarCost,chargeControllerCost,capacityCost,
-    fixedCost,oAndMFactor,term,discountRate,currency,figure):
+    fixedCost,oAndMFactor,term,discountRate,currency,oldFigure):
 
     #Convert percentage to per unit
     discountRate = discountRate/100
@@ -156,10 +158,10 @@ def display_map(_,__,reliabilityExponent,dailyLoad,peakCapacity,solarDerate,
             )
         )
 
-    if 'layout' in figure:
-        lat = figure['layout']['mapbox']['center']['lat']
-        lon = figure['layout']['mapbox']['center']['lon']
-        zoom = figure['layout']['mapbox']['zoom']
+    if 'layout' in oldFigure:
+        lat = oldFigure['layout']['mapbox']['center']['lat']
+        lon = oldFigure['layout']['mapbox']['center']['lon']
+        zoom = oldFigure['layout']['mapbox']['zoom']
     else:
         lat = 0
         lon = 20
@@ -221,8 +223,8 @@ def display_map(_,__,reliabilityExponent,dailyLoad,peakCapacity,solarDerate,
         )
         layout['mapbox']['layers'].append(geoLayer)
 
-    fig = dict(data=data, layout=layout)
-    return fig
+    newFigure = dict(data=data, layout=layout)
+    return newFigure
 
 if __name__ == '__main__':
     app.run_server(debug=True)
