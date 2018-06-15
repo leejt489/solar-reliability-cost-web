@@ -1,7 +1,8 @@
+import ast
+import configparser
 import dash
 from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
-
 import numpy as np
 import json
 
@@ -9,16 +10,27 @@ from utilities import getReliabilityValue
 from globals import MAPBOX_TOKEN,DEFAULT_COLORSCALE
 from layout import layout
 
+config = configparser.ConfigParser()
+config.read('config.ini')
+DEBUG = ast.literal_eval(config['DEFAULT']['DEBUG'])
+PORT = config['DEFAULT']['PORT']
+URL_BASE_PATHNAME = config['DEFAULT']['URL_BASE_PATHNAME']
+ROUTES_PATHNAME_PREFIX = config['DEFAULT']['ROUTES_PATHNAME_PREFIX']
+REQUESTS_PATHNAME_PREFIX = config['DEFAULT']['ROUTES_PATHNAME_PREFIX']
+
 colorscale = DEFAULT_COLORSCALE
-#mapboxToken = 'pk.eyJ1IjoiY2hyaWRkeXAiLCJhIjoiY2oyY2M4YW55MDF1YjMzbzhmemIzb290NiJ9.sT6pncHLXLgytVEj21q43A'
 
 reliabilityFrontiers = json.load(open('reliabilityFrontiers_constant_africa_1.json'))
 
-app = dash.Dash(__name__)
+app = dash.Dash(name=__name__,url_base_pathname=URL_BASE_PATHNAME)
+app.config.update({
+    'routes_pathname_prefix': ROUTES_PATHNAME_PREFIX,
+    'requests_pathname_prefix': REQUESTS_PATHNAME_PREFIX
+})
+
 app.title = 'Cost of Reliability'
 server = app.server
 app.css.append_css({
-    #'external_url': 'https://codepen.io/chriddyp/pen/bWLwgP.css'
     'external_url': 'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'
 })
 
@@ -227,4 +239,4 @@ def display_map(_,__,reliabilityExponent,dailyLoad,peakCapacity,solarDerate,
     return newFigure
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=DEBUG,port=PORT)
