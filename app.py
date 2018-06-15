@@ -10,13 +10,21 @@ from utilities import getReliabilityValue
 from globals import MAPBOX_TOKEN,DEFAULT_COLORSCALE
 from layout import layout
 
-config = configparser.ConfigParser()
-config.read('config.ini')
-DEBUG = ast.literal_eval(config['DEFAULT']['DEBUG'])
-PORT = config['DEFAULT']['PORT']
-URL_BASE_PATHNAME = config['DEFAULT']['URL_BASE_PATHNAME']
-ROUTES_PATHNAME_PREFIX = config['DEFAULT']['ROUTES_PATHNAME_PREFIX']
-REQUESTS_PATHNAME_PREFIX = config['DEFAULT']['ROUTES_PATHNAME_PREFIX']
+
+try:
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    DEBUG = ast.literal_eval(config['DEFAULT']['DEBUG'])
+    PORT = config['DEFAULT']['PORT']
+    URL_BASE_PATHNAME = config['DEFAULT']['URL_BASE_PATHNAME']
+    ROUTES_PATHNAME_PREFIX = config['DEFAULT']['ROUTES_PATHNAME_PREFIX']
+    REQUESTS_PATHNAME_PREFIX = config['DEFAULT']['ROUTES_PATHNAME_PREFIX']
+except (IOError, KeyError):
+    DEBUG = False
+    PORT = 8050
+    URL_BASE_PATHNAME = '/'
+    ROUTES_PATHNAME_PREFIX = '/'
+    REQUESTS_PATHNAME_PREFIX = '/'
 
 colorscale = DEFAULT_COLORSCALE
 
