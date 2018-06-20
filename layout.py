@@ -60,6 +60,33 @@ parameterSectionTechnicalItems=[
                 id='inputBatteryLifetime',type='number',value=DEFAULT_BATTERY_LIFETIME
             ),className='col-lg-6')
         ]
+    ),
+    html.Div(
+        className='row',
+        children=[
+            html.Div(html.Label('Daily load profile'),className='col-lg-6'),
+            html.Div(dcc.Dropdown(
+                id='inputLoadProfileName',
+                options=[
+                    {'label': 'Constant', 'value': 'constant'},
+                    {'label': 'Day Heavy', 'value': 'dayHeavy'}
+                ],
+                value='constant'
+            ),className='col-lg-6')
+        ]
+    ),
+    html.Div(
+        className='row',
+        children=[
+            dcc.Graph(
+                id='graphLoadProfiles',
+                figure={
+                    'data': [],
+                    'layout': {}
+                },
+                config={'displayModeBar': False}
+            )
+        ]
     )
 ]
 
@@ -161,11 +188,11 @@ parameterSectionItems=[
         children=[
             html.Div(
                 children=parameterSectionTechnicalItems,
-                className="col-md-6"
+                className="col-lg-6"
             ),
             html.Div(
                 children=parameterSectionEconomicItems,
-                className="col-md-6"
+                className="col-lg-6"
             )
         ]
     ),
@@ -195,11 +222,11 @@ layout = html.Div(
             className='row',
             children=[
                 html.Div(
-                    className='col-md-6',
+                    className='col-lg-7 col-md-5',
                     children=parameterSectionItems
                 ),
                 html.Div(
-                    className='col-md-6',
+                    className='col-lg-5 col-md-7',
                     children=[
                         html.H2('Map of levelized cost of electricity (LCOE)'),
                         dcc.Graph(

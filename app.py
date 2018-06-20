@@ -7,6 +7,7 @@ import numpy as np
 import json
 
 from utilities import getReliabilityValue
+from utilities import getLoadProfile
 from globals import MAPBOX_TOKEN,DEFAULT_COLORSCALE
 from layout import layout
 
@@ -28,7 +29,10 @@ except (IOError, KeyError):
 
 colorscale = DEFAULT_COLORSCALE
 
-reliabilityFrontiers = json.load(open('reliabilityFrontiers_constant_africa_1.json'))
+reliabilityFrontiersLoadType = {}
+loadProfileNames = ['constant','dayHeavy']
+for lpn in loadProfileNames:
+    reliabilityFrontiersLoadType[lpn] = json.load(open('reliabilityFrontiers/reliabilityFrontiers_{}_africa_1.json'.format(lpn)))
 
 app = dash.Dash(name=__name__,url_base_pathname=URL_BASE_PATHNAME)
 app.config.update({
@@ -74,6 +78,33 @@ def display_value(text):
 def display_value(text):
     return 'Additional Fixed Cost ({})'.format(text)
 
+@app.callback(Output('graphLoadProfiles','figure'),
+    [
+        Input('inputDailyLoad','value'),
+        Input('inputLoadProfileName','value')
+])
+def display_load(dailyLoad,loadProfileName):
+    loadProfileValues = list(getLoadProfile(loadProfileName)*dailyLoad)
+    return {
+        'data': [{
+            'x': list(range(24)),
+            'y': loadProfileValues,
+            'mode':'lines',
+            'line': {'width':3}
+        }],
+        'layout': {
+            'xaxis': {
+                'range': [0,24],
+                'tickvals': [0,4,8,12,16,20,24],
+                'title': 'Hour of day'
+            },
+            'yaxis': {
+                'range': [0,max(loadProfileValues)*1.5],
+                'title': 'kW'
+            },
+            'title': 'Selected Load Profile'
+        }
+    }
 
 @app.callback(
     dash.dependencies.Output('map','figure'),
@@ -87,6 +118,7 @@ def display_value(text):
         State('inputPeakCapacity','value'),
         State('inputSolarDerate','value'),
         State('inputBatteryLifetime','value'),
+        State('inputLoadProfileName','value'),
         State('inputBatteryCost','value'),
         State('inputSolarCost','value'),
         State('inputChargeControllerCost','value'),
@@ -100,7 +132,7 @@ def display_value(text):
     ]
 )
 def display_map(_,__,reliabilityExponent,dailyLoad,peakCapacity,solarDerate,
-    batteryLifetime,storageCost,solarCost,chargeControllerCost,capacityCost,
+    batteryLifetime,loadProfileName,storageCost,solarCost,chargeControllerCost,capacityCost,
     fixedCost,oAndMFactor,term,discountRate,currency,oldFigure):
 
     #Convert percentage to per unit
@@ -112,6 +144,8 @@ def display_map(_,__,reliabilityExponent,dailyLoad,peakCapacity,solarDerate,
     solarTotalCost = solarCost/solarDerate+chargeControllerCost #Solar lifetime assumed to be term
     storageTotalCost = storageCost*(1-(1-discountRate)**term)/(1-(1-discountRate)**batteryLifetime) #Includes replacement cost of storage
     crf = (discountRate*(1+discountRate)**term)/(((1+discountRate)**term)-1)
+
+    reliabilityFrontiers = reliabilityFrontiersLoadType[loadProfileName]
 
     resolution = 1
     latArray = []
