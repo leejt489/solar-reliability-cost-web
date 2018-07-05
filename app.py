@@ -3,8 +3,10 @@ import configparser
 import dash
 from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
-import numpy as np
 import json
+import numpy as np
+import pandas as pd
+import urllib
 
 from utilities import getReliabilityValue
 from utilities import getLoadProfile
@@ -151,6 +153,12 @@ def display_map(_,__,reliabilityExponent,dailyLoad,peakCapacity,solarDerate,
     latArray = []
     lonArray = []
     LCOE = []
+    initialCostArray = []
+    replacementCostArray = []
+    capitalCostArray = []
+    oAndMCostArray = []
+    solCapArray = []
+    storCapArray = []
     hoverText = []
 
     rKey = '{:f}'.format(reliability)
@@ -161,14 +169,23 @@ def display_map(_,__,reliabilityExponent,dailyLoad,peakCapacity,solarDerate,
 
         #Calculate the LCOE
         storVals = np.array(rf['rf'][rKey]['stor'])*dailyLoad
-        storCost = storVals*storageCost
+        storCost = storVals*storageTotalCost
         solVals = np.array(rf['rf'][rKey]['sol'])*dailyLoad
-        solCost = solVals*solarCost
+        solCost = solVals*solarTotalCost
         minInd = np.argmin(storCost+solCost)
         capitalCost = storCost[minInd]+solCost[minInd]+peakCapacity*capacityCost+fixedCost
+        initialCost = storVals[minInd]*storageCost+solCost[minInd]+peakCapacity*capacityCost+fixedCost #Storage initial cost excludes replacement
+        replacementCost = capitalCost-initialCost
+        oAndMCost = capitalCost*oAndMFactor
         LCOEVal = (crf+oAndMFactor)*capitalCost/365/dailyLoad/reliability
 
         LCOE.append(LCOEVal)
+        initialCostArray.append(initialCost)
+        replacementCostArray.append(replacementCost)
+        capitalCostArray.append(capitalCost)
+        oAndMCostArray.append(oAndMCost)
+        solCapArray.append(solVals[minInd])
+        storCapArray.append(storVals[minInd])
         hoverText.append(('Lat: {}<br>Lon: {}<br>LCOE ({}/kWh): {:0.3f}<br>kW PV: {:0.2f}<br>kWh Stor: {:0.2f}<br>Capital Cost ({}): {}').format(
             rf['lat'],rf['lon'],currency,LCOEVal,solVals[minInd],storVals[minInd],currency,int(round(capitalCost))
         ))
@@ -181,6 +198,13 @@ def display_map(_,__,reliabilityExponent,dailyLoad,peakCapacity,solarDerate,
     data = [dict(
         lat = latArray,
         lon = lonArray,
+        LCOE = LCOE,
+        solCap = solCapArray,
+        storCap = storCapArray,
+        capCost = capitalCostArray,
+        initCost = initialCostArray,
+        repCost = replacementCostArray,
+        oAndMCost = oAndMCostArray,
         text = hoverText,
         type = 'scattermapbox',
         hoverinfo = 'text',
@@ -192,8 +216,8 @@ def display_map(_,__,reliabilityExponent,dailyLoad,peakCapacity,solarDerate,
 		#align = 'right',
 		text = '<b>LCOE</b>',
         bgcolor = '#EFEFEE',
-		x = 0.95,
-		y = 0.95,
+		x = 0.90,
+		y = 0.915,
 	)]
 
     for i in range(0,len(colorscale)):
@@ -202,11 +226,12 @@ def display_map(_,__,reliabilityExponent,dailyLoad,peakCapacity,solarDerate,
             dict(
                 arrowcolor = colorscale[i],
                 text = ('{:0.3f}-{:0.3f}').format(binEdges[i],binEdges[i+1]),
+                height = 21,
                 x = 0.95,
                 y = 0.85-(i/20),
                 ax = -55,
                 ay = 0,
-                arrowwidth = 8,
+                arrowwidth = 23,
                 arrowhead = 0,
                 bgcolor = '#EFEFEE'
             )
@@ -279,6 +304,24 @@ def display_map(_,__,reliabilityExponent,dailyLoad,peakCapacity,solarDerate,
 
     newFigure = dict(data=data, layout=layout)
     return newFigure
+
+@app.callback(Output('downloadLink','href'),
+    [Input('map', 'figure')])
+def updateLink(figure):
+    d = figure['data'][0]
+    df = pd.DataFrame({
+        'lat': d['lat'],
+        'lon': d['lon'],
+        'LCOE': d['LCOE'],
+        'Up-front Cost': d['initCost'],
+        'Replacement Cost (Present Cost)': d['repCost'],
+        'Total Capital Cost': d['capCost'],
+        'O And M Cost': d['oAndMCost'],
+        'Solar Capacity (kW)': d['solCap'],
+        'Storage Capacity (kWh)': d['storCap']
+    },
+    columns=['lat','lon','LCOE','Up-front Cost','Replacement Cost (Present Cost)','Total Capital Cost','O And M Cost','Solar Capacity (kW)','Storage Capacity (kWh)'])
+    return 'data:text/csv;charset=utf-8,'+urllib.parse.quote(df.to_csv(index=False, encoding='utf-8'))
 
 if __name__ == '__main__':
     app.run_server(debug=DEBUG,port=PORT)

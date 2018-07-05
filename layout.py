@@ -246,7 +246,19 @@ layout = html.Div(
                                 #         'pitch': 0
                                 #     }
                                 # }
-                            })
+                            },
+                            config = {
+                                #'modeBarButtonsToAdd': ['zoom2d'],
+                                'modeBarButtonsToRemove': ['toggleHover','sendDataToCloud']
+                            }
+                        ),
+                        html.A(
+                            'Download Data as CSV',
+                            id='downloadLink',
+                            download="rawdata.csv",
+                            href="",
+                            target="_blank"
+                        )
                     ]
                 )
             ]
