@@ -109,7 +109,7 @@ def display_load(dailyLoad,loadProfileName):
     }
 
 @app.callback(
-    dash.dependencies.Output('map','figure'),
+    Output('map','figure'),
     [
         Input('buttonUpdateMap','n_clicks'),
         Input('buttonUpdateMap2','n_clicks')

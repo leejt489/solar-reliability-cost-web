@@ -69,7 +69,9 @@ parameterSectionTechnicalItems=[
                 id='inputLoadProfileName',
                 options=[
                     {'label': 'Constant', 'value': 'constant'},
-                    {'label': 'Day Heavy', 'value': 'dayHeavy'}
+                    {'label': 'Representative', 'value': 'representative'},
+                    {'label': 'Day Heavy', 'value': 'dayHeavy'},
+                    {'label': 'Night Heavy','value': 'nightHeavy'}
                 ],
                 value='constant'
             ),className='col-lg-6')
