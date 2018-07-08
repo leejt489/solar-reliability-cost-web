@@ -317,7 +317,10 @@ def updateLink(figure):
     return 'data:text/csv;charset=utf-8,'+urllib.parse.quote(df.to_csv(index=False, encoding='utf-8'))
 
 @app.callback(Output('selectedDataReliabilityScaling','figure'),
-    [Input('map','selectedData')],
+    [
+        Input('map','selectedData'),
+        Input('map','figure')
+    ],
     [
         State('inputDailyLoad','value'),
         State('inputPeakCapacity','value'),
@@ -334,7 +337,7 @@ def updateLink(figure):
         State('inputDiscountRate','value'),
         State('inputCurrency','value')
     ])
-def displaySelectedReliabilityScaling(selectedData,dailyLoad,peakCapacity,solarDerate,
+def displaySelectedReliabilityScaling(selectedData,figure,dailyLoad,peakCapacity,solarDerate,
     batteryLifetime,loadProfileName,storageCost,solarCost,chargeControllerCost,capacityCost,
     fixedCost,oAndMFactor,term,discountRate,currency):
 

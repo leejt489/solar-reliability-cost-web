@@ -3,7 +3,7 @@ import dash_core_components as dcc
 
 from globals import SAMPLE_RELIABILITY_EXPONENTS,DEFAULT_PEAK_CAPACITY,DEFAULT_DAILY_LOAD,DEFAULT_SOLAR_DERATE,DEFAULT_BATTERY_LIFETIME,DEFAULT_CURRENCY,DEFAULT_BATTERY_COST,DEFAULT_SOLAR_COST,DEFAULT_CHARGE_CONTROLLER_COST,DEFAULT_CAPACITY_COST,DEFAULT_FIXED_COST,DEFAULT_OM_FACTOR,DEFAULT_TERM,DEFAULT_DISCOUNT_RATE,MAPBOX_TOKEN
 from utilities import getReliabilityValue
-from descriptionText import topText
+from descriptionText import topText, guideText
 
 
 parameterSectionTechnicalItems=[
@@ -208,8 +208,8 @@ layout = html.Div(
         html.Div(
             className='row col-xs-12',
             children=[
-                html.H1('[Under Construction]'),
                 html.H1('Estimated Cost of Decentralized Solar Power Systems in sub-Saharan Africa'),
+                html.H3('[Beta Version]'),
                 html.Hr()
             ]
         ),
@@ -267,6 +267,14 @@ layout = html.Div(
             ]
         ),
         html.Hr(),
+        html.Div(
+            id='quickGuide',
+            className='row col-xs-12',
+            children=[
+                dcc.Markdown(guideText),
+                html.Hr()
+            ]
+        ),
         html.Div(
             className='row col-xs-12',
             children=dcc.Markdown('&#169; Jonathan Lee, 2018')
