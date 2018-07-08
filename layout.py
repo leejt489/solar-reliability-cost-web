@@ -19,7 +19,7 @@ parameterSectionTechnicalItems=[
                 max=SAMPLE_RELIABILITY_EXPONENTS[-1],
                 value=3,
                 step=1,
-                marks={str(r): '{:0.2f}'.format(getReliabilityValue(r)*100) for r in [-2,0,3,7,10]}
+                marks={str(r): '{:0.2f}'.format(getReliabilityValue(r)*100) for r in SAMPLE_RELIABILITY_EXPONENTS[::2]}
             )],style={'padding-bottom':20,'padding-left':10,'padding-right':10}),
             html.Div(id='dispReliabilityValue')
         ]

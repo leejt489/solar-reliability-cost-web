@@ -32,8 +32,9 @@ colorscale = DEFAULT_COLORSCALE
 
 reliabilityFrontiersLoadType = {}
 loadProfileNames = ['constant','representative','dayHeavy','nightHeavy']
+resolution = 1
 for lpn in loadProfileNames:
-    reliabilityFrontiersLoadType[lpn] = json.load(open('reliabilityFrontiers/reliabilityFrontiers_{}_africa_1.json'.format(lpn)))
+    reliabilityFrontiersLoadType[lpn] = json.load(open('reliabilityFrontiers/reliabilityFrontiers_{}_africa_{}.json'.format(lpn,resolution)))
 
 app = dash.Dash(name=__name__,url_base_pathname=URL_BASE_PATHNAME)
 app.config.update({
@@ -137,7 +138,6 @@ def display_map(_,__,reliabilityExponent,dailyLoad,peakCapacity,solarDerate,
     fixedCost,oAndMFactor,term,discountRate,currency,oldFigure):
 
     reliabilityFrontiers = reliabilityFrontiersLoadType[loadProfileName]
-    resolution = 1
 
     latArray = []
     lonArray = []
@@ -189,8 +189,8 @@ def display_map(_,__,reliabilityExponent,dailyLoad,peakCapacity,solarDerate,
     #cm = dict(zip(bins, colorscale))
 
     data = [dict(
-        lat = latArray,
-        lon = lonArray,
+        lat = [x + resolution/2 for x in latArray], #offset to put data in middle of square
+        lon = [x + resolution/2 for x in lonArray],
         LCOE = LCOE,
         solCap = solCapArray,
         storCap = storCapArray,
@@ -250,7 +250,7 @@ def display_map(_,__,reliabilityExponent,dailyLoad,peakCapacity,solarDerate,
         hovermode = 'closest',
         margin = dict(r=0, l=0, t=0, b=0),
         annotations = annotations,
-        dragmode = 'lasso'
+        dragmode = 'select'
     )
 
     binInd = np.digitize(LCOE,binEdges[:-1])#temporary hack
@@ -291,7 +291,7 @@ def display_map(_,__,reliabilityExponent,dailyLoad,peakCapacity,solarDerate,
             source = geoJSONBinned[i],
             type = 'fill',
             color = colorscale[i],
-            opacity = 0.8
+            opacity = 0.7
         )
         layout['mapbox']['layers'].append(geoLayer)
 
@@ -345,7 +345,7 @@ def displaySelectedReliabilityScaling(selectedData,dailyLoad,peakCapacity,solarD
         points = np.zeros((len(reliabilityFrontiers),1))
     else:
         showAll = False
-        points = [(p['lat'],p['lon']) for p in selectedData['points']]
+        points = [(p['lat']-resolution/2,p['lon']-resolution/2) for p in selectedData['points']]
 
     LCOE = np.zeros((len(points),len(SAMPLE_RELIABILITY_EXPONENTS)))
 
@@ -405,7 +405,7 @@ def displaySelectedReliabilityScaling(selectedData,dailyLoad,peakCapacity,solarD
             }
         }],
         'layout': {
-            'title': 'Scaling of LCOE vs Reliability for Selected Locations (click and drag on map)',
+            'title': 'Scaling of LCOE vs Reliability for Selected Locations<br>(click and drag on map)',
             'xaxis': {
                 'title': 'Fraction of Demand Served (%)',
                 'tickvals': list(SAMPLE_RELIABILITY_EXPONENTS),

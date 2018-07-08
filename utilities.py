@@ -8,11 +8,11 @@ def getLoadProfile(loadType):
         return np.ones(24)/24
     elif loadType == 'dayHeavy':
         x = np.zeros(24)
-        x[6:17] = 1
+        x[6:18] = 1
         return x/np.sum(x)
     elif loadType == 'nightHeavy':
         x = np.ones(24)
-        x[6:17] = 0
+        x[6:18] = 0
         return x/np.sum(x)
     elif loadType == 'representative':
         x = np.asarray([
