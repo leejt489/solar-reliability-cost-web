@@ -183,7 +183,7 @@ parameterSectionEconomicItems=[
 parameterSectionItems=[
     html.H2('Parameters'),
     html.Hr(),
-    html.Button(id='buttonUpdateMap', n_clicks=0, children='Update Map'),
+    html.Button(id='buttonUpdateMap', n_clicks=0, children='Update Map', className="btn btn-primary"),
     html.Hr(),
     html.Div(
         className='row',
@@ -199,7 +199,7 @@ parameterSectionItems=[
         ]
     ),
     html.Hr(),
-    html.Button(id='buttonUpdateMap2', children='Update Map')
+    html.Button(id='buttonUpdateMap2', children='Update Map', className="btn btn-primary")
 ]
 
 layout = html.Div(
@@ -255,12 +255,13 @@ layout = html.Div(
                             }
                         ),
                         html.A(
-                            'Download Data as CSV',
+                            html.Button('Download Map Data as CSV',className='btn btn-primary'),
                             id='downloadLink',
                             download="rawdata.csv",
                             href="",
                             target="_blank"
-                        )
+                        ),
+                        dcc.Graph(id='selectedDataReliabilityScaling')
                     ]
                 )
             ]

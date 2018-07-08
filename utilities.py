@@ -44,3 +44,28 @@ def getLoadProfile(loadType):
         return x/np.sum(x)
     else:
         raise ArgumentError('Unrecognized load profile type')
+
+def calculateMinimumCost(reliabilityFrontier,reliability,dailyLoad,peakCapacity,solarDerate,storageCost,solarCost,chargeControllerCost,capacityCost,fixedCost,oAndMFactor,discountRate,term,batteryLifetime):
+
+    rKey = '{:f}'.format(reliability)
+
+    solarTotalCost = solarCost/solarDerate+chargeControllerCost #Solar lifetime assumed to be term
+    storageTotalCost = storageCost*(1-(1-discountRate)**term)/(1-(1-discountRate)**batteryLifetime) #Includes replacement cost of storage
+    crf = (discountRate*(1+discountRate)**term)/(((1+discountRate)**term)-1)
+
+    storVals = np.array(reliabilityFrontier['rf'][rKey]['stor'])*dailyLoad
+    storCost = storVals*storageTotalCost
+    solVals = np.array(reliabilityFrontier['rf'][rKey]['sol'])*dailyLoad
+    solCost = solVals*solarTotalCost
+    minInd = np.argmin(storCost+solCost)
+    capitalCost = storCost[minInd]+solCost[minInd]+peakCapacity*capacityCost+fixedCost
+    initialCost = storVals[minInd]*storageCost+solCost[minInd]+peakCapacity*capacityCost+fixedCost #Storage initial cost excludes replacement
+    return dict(
+        LCOE = (crf+oAndMFactor)*capitalCost/365/dailyLoad/reliability,
+        capitalCost = capitalCost,
+        initialCost = initialCost,
+        replacementCost = capitalCost-initialCost,
+        oAndMCost = capitalCost*oAndMFactor,
+        solarCapacity = solVals[minInd],
+        storageCapacity = storVals[minInd]
+    )

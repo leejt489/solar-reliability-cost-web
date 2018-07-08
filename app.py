@@ -8,9 +8,8 @@ import numpy as np
 import pandas as pd
 import urllib
 
-from utilities import getReliabilityValue
-from utilities import getLoadProfile
-from globals import MAPBOX_TOKEN,DEFAULT_COLORSCALE
+from utilities import calculateMinimumCost, getLoadProfile, getReliabilityValue
+from globals import MAPBOX_TOKEN,DEFAULT_COLORSCALE,SAMPLE_RELIABILITY_EXPONENTS
 from layout import layout
 
 
@@ -32,7 +31,7 @@ except (IOError, KeyError):
 colorscale = DEFAULT_COLORSCALE
 
 reliabilityFrontiersLoadType = {}
-loadProfileNames = ['constant','dayHeavy']
+loadProfileNames = ['constant','representative','dayHeavy','nightHeavy']
 for lpn in loadProfileNames:
     reliabilityFrontiersLoadType[lpn] = json.load(open('reliabilityFrontiers/reliabilityFrontiers_{}_africa_1.json'.format(lpn)))
 
@@ -137,19 +136,9 @@ def display_map(_,__,reliabilityExponent,dailyLoad,peakCapacity,solarDerate,
     batteryLifetime,loadProfileName,storageCost,solarCost,chargeControllerCost,capacityCost,
     fixedCost,oAndMFactor,term,discountRate,currency,oldFigure):
 
-    #Convert percentage to per unit
-    discountRate = discountRate/100
-    solarDerate = solarDerate/100
-    oAndMFactor = oAndMFactor/100
-    reliability = getReliabilityValue(reliabilityExponent)
-
-    solarTotalCost = solarCost/solarDerate+chargeControllerCost #Solar lifetime assumed to be term
-    storageTotalCost = storageCost*(1-(1-discountRate)**term)/(1-(1-discountRate)**batteryLifetime) #Includes replacement cost of storage
-    crf = (discountRate*(1+discountRate)**term)/(((1+discountRate)**term)-1)
-
     reliabilityFrontiers = reliabilityFrontiersLoadType[loadProfileName]
-
     resolution = 1
+
     latArray = []
     lonArray = []
     LCOE = []
@@ -161,33 +150,37 @@ def display_map(_,__,reliabilityExponent,dailyLoad,peakCapacity,solarDerate,
     storCapArray = []
     hoverText = []
 
-    rKey = '{:f}'.format(reliability)
-
     for rf in reliabilityFrontiers:
         latArray.append(rf['lat'])
         lonArray.append(rf['lon'])
 
-        #Calculate the LCOE
-        storVals = np.array(rf['rf'][rKey]['stor'])*dailyLoad
-        storCost = storVals*storageTotalCost
-        solVals = np.array(rf['rf'][rKey]['sol'])*dailyLoad
-        solCost = solVals*solarTotalCost
-        minInd = np.argmin(storCost+solCost)
-        capitalCost = storCost[minInd]+solCost[minInd]+peakCapacity*capacityCost+fixedCost
-        initialCost = storVals[minInd]*storageCost+solCost[minInd]+peakCapacity*capacityCost+fixedCost #Storage initial cost excludes replacement
-        replacementCost = capitalCost-initialCost
-        oAndMCost = capitalCost*oAndMFactor
-        LCOEVal = (crf+oAndMFactor)*capitalCost/365/dailyLoad/reliability
+        minCost = calculateMinimumCost(
+            reliabilityFrontier = rf,
+            reliability = getReliabilityValue(reliabilityExponent),
+            dailyLoad = dailyLoad,
+            peakCapacity = peakCapacity,
+            solarDerate = solarDerate/100,
+            storageCost = storageCost,
+            solarCost = solarCost,
+            chargeControllerCost = chargeControllerCost,
+            capacityCost = capacityCost,
+            fixedCost = fixedCost,
+            oAndMFactor = oAndMFactor/100,
+            discountRate = discountRate/100,
+            term = term,
+            batteryLifetime = batteryLifetime
+        )
 
-        LCOE.append(LCOEVal)
-        initialCostArray.append(initialCost)
-        replacementCostArray.append(replacementCost)
-        capitalCostArray.append(capitalCost)
-        oAndMCostArray.append(oAndMCost)
-        solCapArray.append(solVals[minInd])
-        storCapArray.append(storVals[minInd])
+        LCOE.append(minCost['LCOE'])
+        initialCostArray.append(minCost['initialCost'])
+        replacementCostArray.append(minCost['replacementCost'])
+        capitalCostArray.append(minCost['capitalCost'])
+        oAndMCostArray.append(minCost['oAndMCost'])
+        solCapArray.append(minCost['solarCapacity'])
+        storCapArray.append(minCost['storageCapacity'])
+
         hoverText.append(('Lat: {}<br>Lon: {}<br>LCOE ({}/kWh): {:0.3f}<br>kW PV: {:0.2f}<br>kWh Stor: {:0.2f}<br>Capital Cost ({}): {}').format(
-            rf['lat'],rf['lon'],currency,LCOEVal,solVals[minInd],storVals[minInd],currency,int(round(capitalCost))
+            rf['lat'],rf['lon'],currency,minCost['LCOE'],minCost['solarCapacity'],minCost['storageCapacity'],currency,int(round(minCost['capitalCost']))
         ))
 
     (_,binEdges) = np.histogram(LCOE,len(colorscale))
@@ -322,6 +315,107 @@ def updateLink(figure):
     },
     columns=['lat','lon','LCOE','Up-front Cost','Replacement Cost (Present Cost)','Total Capital Cost','O And M Cost','Solar Capacity (kW)','Storage Capacity (kWh)'])
     return 'data:text/csv;charset=utf-8,'+urllib.parse.quote(df.to_csv(index=False, encoding='utf-8'))
+
+@app.callback(Output('selectedDataReliabilityScaling','figure'),
+    [Input('map','selectedData')],
+    [
+        State('inputDailyLoad','value'),
+        State('inputPeakCapacity','value'),
+        State('inputSolarDerate','value'),
+        State('inputBatteryLifetime','value'),
+        State('inputLoadProfileName','value'),
+        State('inputBatteryCost','value'),
+        State('inputSolarCost','value'),
+        State('inputChargeControllerCost','value'),
+        State('inputCapacityCost','value'),
+        State('inputFixedCost','value'),
+        State('inputOMFactor','value'),
+        State('inputTerm','value'),
+        State('inputDiscountRate','value'),
+        State('inputCurrency','value')
+    ])
+def displaySelectedReliabilityScaling(selectedData,dailyLoad,peakCapacity,solarDerate,
+    batteryLifetime,loadProfileName,storageCost,solarCost,chargeControllerCost,capacityCost,
+    fixedCost,oAndMFactor,term,discountRate,currency):
+
+    reliabilityFrontiers = reliabilityFrontiersLoadType[loadProfileName]
+
+    if selectedData is None:
+        showAll = True
+        points = np.zeros((len(reliabilityFrontiers),1))
+    else:
+        showAll = False
+        points = [(p['lat'],p['lon']) for p in selectedData['points']]
+
+    LCOE = np.zeros((len(points),len(SAMPLE_RELIABILITY_EXPONENTS)))
+
+    rowInd = 0
+    for rf in reliabilityFrontiers:
+        if not showAll and (rf['lat'],rf['lon']) not in points:
+            continue
+
+        for colInd,reliabilityExponent in enumerate(SAMPLE_RELIABILITY_EXPONENTS):
+            reliability = getReliabilityValue(reliabilityExponent)
+
+            LCOE[rowInd,colInd] = calculateMinimumCost(
+                reliabilityFrontier = rf,
+                reliability = reliability,
+                dailyLoad = dailyLoad,
+                peakCapacity = peakCapacity,
+                solarDerate = solarDerate/100,
+                storageCost = storageCost,
+                solarCost = solarCost,
+                chargeControllerCost = chargeControllerCost,
+                capacityCost = capacityCost,
+                fixedCost = fixedCost,
+                oAndMFactor = oAndMFactor/100,
+                discountRate = discountRate/100,
+                term = term,
+                batteryLifetime = batteryLifetime
+            )['LCOE']
+
+        rowInd += 1
+
+    #print(LCOE)
+    nBins = 30
+    ymin = np.amin(LCOE)
+    ymax = np.amax(LCOE)
+    ymax2 = ymin
+    for i in range(0,len(SAMPLE_RELIABILITY_EXPONENTS)):
+        #print(np.histogram(LCOE[:,i],bins = nBins,range=(ymin,ymax),density=True))
+        (hist,y) = np.histogram(LCOE[:,i],bins = nBins,range=(ymin,ymax),density=False)
+        ymax2 = max(ymax2,y[np.sum(np.cumsum(hist/len(points)) < 0.95)]) #Find the point where 95% of the cumulative distribution is captured, and use that to set the upper bound
+
+    z = np.zeros((nBins,len(SAMPLE_RELIABILITY_EXPONENTS)))
+    #Re-calculate the histogram with the appropriate upper bound
+    for i in range(0,len(SAMPLE_RELIABILITY_EXPONENTS)):
+        #print(np.histogram(LCOE[:,i],bins = nBins,range=(ymin,ymax),density=True))
+        (hist,y) = np.histogram(LCOE[:,i],bins = nBins,range=(ymin,ymax2),density=False)
+        z[:,i] = hist/len(points)
+
+    return {
+        'data': [{
+            'z': z,
+            'x': list(SAMPLE_RELIABILITY_EXPONENTS),
+            'y': y,
+            'type': 'heatmap',
+            'colorscale': 'Viridis',
+            'colorbar': {
+                'title': 'Density'
+            }
+        }],
+        'layout': {
+            'title': 'Scaling of LCOE vs Reliability for Selected Locations (click and drag on map)',
+            'xaxis': {
+                'title': 'Fraction of Demand Served (%)',
+                'tickvals': list(SAMPLE_RELIABILITY_EXPONENTS),
+                'ticktext': ['{:0.2f}'.format(getReliabilityValue(r)*100) for r in SAMPLE_RELIABILITY_EXPONENTS]
+            },
+            'yaxis': {
+                'title': 'LCOE ({})'.format(currency)
+            }
+        }
+    }
 
 if __name__ == '__main__':
     app.run_server(debug=DEBUG,port=PORT)
