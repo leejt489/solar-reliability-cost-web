@@ -279,8 +279,6 @@ layout = html.Div(
             id='people',
             className='row col-xs-12',
             children=dcc.Markdown(researchersText)
-                )
-            ]
         ),
         html.Hr(),
         html.Div(
