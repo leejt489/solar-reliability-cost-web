@@ -8,7 +8,7 @@ Please file issues, bugs, and feature requests for the tool on [GitHub](https://
 
 We request that users refer and provide attribution to the following article for all academic research using this tool:
 
-->Lee, Jonathan T. and Callaway, Duncan S. "The cost of reliability in decentralized solar power systems in sub-Saharan Africa." *Nature Energy* (2018). [doi:10.1038/s41560-018-0240-y](https://doi.org/10.1038/s41560-018-0240-y)<-
+>Lee, Jonathan T. and Callaway, Duncan S. "The cost of reliability in decentralized solar power systems in sub-Saharan Africa." *Nature Energy* (2018). [doi:10.1038/s41560-018-0240-y](https://doi.org/10.1038/s41560-018-0240-y)
 '''
 guideText = '''
 ## Quick Guide
@@ -22,5 +22,5 @@ You can hover over locations on the map to view LCOE, capital cost, and the capa
 researchersText='''
 ## The Researchers
 
-This research is conducted by [Jonathan Lee](https://erg.berkeley.edu/people/lee-jonathan/) and Duncan Callaway(https://erg.berkeley.edu/people/callaway-duncan/). Jonathan is a PhD student and Duncan is a Professor in the [Energy and Resources Group](https://erg.berkeley.edu/) at the University of California, Berkeley.
+This research is conducted by [Jonathan Lee](https://erg.berkeley.edu/people/lee-jonathan/) and [Duncan Callaway](https://erg.berkeley.edu/people/callaway-duncan/). Jonathan is a PhD student and Duncan is a Professor in the [Energy and Resources Group](https://erg.berkeley.edu/) at the University of California, Berkeley.
 '''
