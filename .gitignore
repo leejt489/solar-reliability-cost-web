@@ -1,5 +1,6 @@
 debug
 venv
+env
 *.pyc
 .DS_Store
 .env
