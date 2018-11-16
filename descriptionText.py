@@ -13,7 +13,7 @@ We request that users refer and provide attribution to the following article for
 guideText = '''
 ## Quick Guide
 
-A full description of methods used to estimate the cost will be published shortly, and is available upon request. In essence, you can adjust the technical and economic parameters below and click the "Update Map" button to see the spatial variation in the levelized cost of electricity. You can choose between four different load profile shapes which influence how much storage is needed. The load profile shape is interpreted as the average day, and the "peak capacity" is an independent parameter that dictates the desired capacity of the power supply, which may be larger in order to handle short-term load spikes.
+A full description of methods is published in [Nature Energy](https://doi.org/10.1038/s41560-018-0240-y). In essence, you can adjust the technical and economic parameters below and click the "Update Graph" button to see the spatial variation in the levelized cost of electricity. You can choose between several different load profile shapes which influence how much storage is needed. The load profile shape is interpreted as the average day, and the "peak capacity" is an independent parameter that dictates the desired capacity of the power supply, which may be larger in order to handle short-term load spikes. More information on the provided load profiles and how they were generated is given below.
 
 The program solves the cost-minimization numerically by simulating different system configurations over 11 years of daily solar irradiance provided by [NASA's Surface meteorology and Solar Energy database](https://eosweb.larc.nasa.gov/sse/). The spatial resolution is 1 degree latitude and longitude.
 

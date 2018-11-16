@@ -31,7 +31,10 @@ except (IOError, KeyError):
 colorscale = DEFAULT_COLORSCALE
 
 reliabilityFrontiersLoadType = {}
-loadProfileNames = ['constant','representative','dayHeavy','nightHeavy']
+loadProfileNames = [
+    'constant', 'representative', 'dayHeavy', 'nightHeavy', 'smallIndia'#,
+    # 'mediumHouseholds', 'saGrid', 'loadZim', 'homeBusiness', 'onlyBusinesses'
+]
 resolution = 1
 for lpn in loadProfileNames:
     reliabilityFrontiersLoadType[lpn] = json.load(open('reliabilityFrontiers/reliabilityFrontiers_{}_africa_{}.json'.format(lpn,resolution)))
@@ -298,7 +301,7 @@ def display_map(_,__,reliabilityExponent,dailyLoad,peakCapacity,solarDerate,
     newFigure = dict(data=data, layout=layout)
     return newFigure
 
-@app.callback(Output('downloadLink','href'),
+@app.callback(Output('downloadLinkMap','href'),
     [Input('map', 'figure')])
 def updateLink(figure):
     d = figure['data'][0]
@@ -315,6 +318,29 @@ def updateLink(figure):
     },
     columns=['lat','lon','LCOE','Up-front Cost','Replacement Cost (Present Cost)','Total Capital Cost','O And M Cost','Solar Capacity (kW)','Storage Capacity (kWh)'])
     return 'data:text/csv;charset=utf-8,'+urllib.parse.quote(df.to_csv(index=False, encoding='utf-8'))
+
+
+@app.callback(
+    Output('downloadLinkLCOE', 'href'),
+    [Input('selectedDataReliabilityScaling', 'figure')]
+)
+def updateLinkLCOE(figure):
+    d = figure['data'][0]
+    df1 = pd.DataFrame(
+        np.column_stack((d['lat'], d['lon'])),
+        columns=['lat', 'lon']
+    )
+    df2 = pd.DataFrame(
+        data=d['LCOE'],
+        columns=[
+            'LCOE @ FDS={:0.2f}%'.format(getReliabilityValue(r)*100)
+            for r in SAMPLE_RELIABILITY_EXPONENTS
+        ]
+    )
+    df = pd.concat([df1, df2], axis=1)
+    return 'data:text/csv;charset=utf-8,'+urllib.parse.quote(
+        df.to_csv(index=False, encoding='utf-8')
+    )
 
 @app.callback(Output('selectedDataReliabilityScaling','figure'),
     [
@@ -350,7 +376,9 @@ def displaySelectedReliabilityScaling(selectedData,figure,dailyLoad,peakCapacity
         showAll = False
         points = [(p['lat']-resolution/2,p['lon']-resolution/2) for p in selectedData['points']]
 
-    LCOE = np.zeros((len(points),len(SAMPLE_RELIABILITY_EXPONENTS)))
+    LCOE = np.zeros((len(points), len(SAMPLE_RELIABILITY_EXPONENTS)))
+    lat = np.zeros((len(points)))
+    lon = np.zeros((len(points)))
 
     rowInd = 0
     for rf in reliabilityFrontiers:
@@ -376,6 +404,9 @@ def displaySelectedReliabilityScaling(selectedData,figure,dailyLoad,peakCapacity
                 term = term,
                 batteryLifetime = batteryLifetime
             )['LCOE']
+
+            lat[rowInd] = rf['lat']
+            lon[rowInd] = rf['lon']
 
         rowInd += 1
 
@@ -405,7 +436,10 @@ def displaySelectedReliabilityScaling(selectedData,figure,dailyLoad,peakCapacity
             'colorscale': 'Viridis',
             'colorbar': {
                 'title': 'Density'
-            }
+            },
+            'LCOE': LCOE,  # Only b/c need to pass this to download link
+            'lat': lat,  # Only b/c need to pass this to download link
+            'lon': lon  # Only b/c need to pass this to download link
         }],
         'layout': {
             'title': 'Scaling of LCOE vs Reliability for Selected Locations<br>(click and drag on map)',

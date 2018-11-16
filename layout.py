@@ -69,9 +69,15 @@ parameterSectionTechnicalItems=[
                 id='inputLoadProfileName',
                 options=[
                     {'label': 'Constant', 'value': 'constant'},
-                    {'label': 'Representative', 'value': 'representative'},
+                    {'label': 'Uganda Mini-grid', 'value': 'representative'},
                     {'label': 'Day Heavy', 'value': 'dayHeavy'},
-                    {'label': 'Night Heavy','value': 'nightHeavy'}
+                    {'label': 'Night Heavy', 'value': 'nightHeavy'},
+                    {'label': 'Small India', 'value': 'smallIndia'},
+                    {'label': 'Medium Households', 'value': 'mediumHouseholds'},
+                    {'label': 'South African Grid Connected', 'value': 'saGrid'},
+                    {'label': 'Zimbabwe', 'value': 'loadZim'},
+                    {'label': 'Homes Plus Businesses', 'value': 'homeBusiness'},
+                    {'label': 'Only Businesses', 'value': 'onlyBusinesses'}
                 ],
                 value='constant'
             ),className='col-lg-6')
@@ -183,7 +189,7 @@ parameterSectionEconomicItems=[
 parameterSectionItems=[
     html.H2('Parameters'),
     html.Hr(),
-    html.Button(id='buttonUpdateMap', n_clicks=0, children='Update Map', className="btn btn-primary"),
+    html.Button(id='buttonUpdateMap', n_clicks=0, children='Update Graph', className="btn btn-primary"),
     html.Hr(),
     html.Div(
         className='row',
@@ -256,12 +262,22 @@ layout = html.Div(
                         ),
                         html.A(
                             html.Button('Download Map Data as CSV',className='btn btn-primary'),
-                            id='downloadLink',
+                            id='downloadLinkMap',
                             download="rawdata.csv",
                             href="",
                             target="_blank"
                         ),
-                        dcc.Graph(id='selectedDataReliabilityScaling')
+                        dcc.Graph(id='selectedDataReliabilityScaling'),
+                        html.A(
+                            html.Button(
+                                'Download LCOE vs. Reliability as CSV',
+                                className='btn btn-primary',
+                            ),
+                            id="downloadLinkLCOE",
+                            download="LCOEByReliability.csv",
+                            href="",
+                            target="_blank"
+                        )
                     ]
                 )
             ]
@@ -272,6 +288,43 @@ layout = html.Div(
             className='row col-xs-12',
             children=[
                 dcc.Markdown(guideText),
+                html.H3('Load Profiles'),
+                html.Div('We have provided a collection of sample average daily load profiles that result in different model outputs. Some are empirically measured and others are estimated or constructed, as described below:'),
+                html.Table(
+                    [
+                        html.Thead(html.Tr([
+                            html.Th('Daily Load Profile'),
+                            html.Th('Source'),
+                            html.Th('Description')
+                        ])),
+                        html.Tbody([html.Tr([
+                            html.Td('Constant'),
+                            html.Td('N/A'),
+                            html.Td('Constant demand. Unrealistic but simple, and evenly distributes load between nighttime and daytime hours')
+                        ]),
+                        html.Tr([
+                            html.Td('Uganda Mini-grid'),
+                            html.Td(html.A('New Sun Road, P.B.C', href='https://www.newsunroad.com', target='_blank')),
+                            html.Td('Empirical demand from a village of 34 small business on an island in Lake Victoria, Uganda')
+                        ]),
+                        html.Tr([
+                            html.Td('Day Heavy'),
+                            html.Td('N/A'),
+                            html.Td('All demand during the hours of 06:00 and 18:00 to represent an extreme case of demand only during the day, which requires very little storage')
+                        ]),
+                        html.Tr([
+                            html.Td('Night Heavy'),
+                            html.Td('N/A'),
+                            html.Td('All demand during the hours of 18:00 and 06:00 to represent an extreme case of demand only during the night, which requires a large amount of energy storage.. Comparing this with Day Heavy gives some idea of the costs associated with storage and value of shifting load to the day')
+                        ]),
+                        html.Tr([
+                            html.Td('Small India'),
+                            html.Td('[...]'),
+                            html.Td('[...]')
+                        ])])
+                    ],
+                    className='table table-striped table-bordered'
+                ),
                 html.Hr()
             ]
         ),
