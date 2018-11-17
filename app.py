@@ -32,8 +32,10 @@ colorscale = DEFAULT_COLORSCALE
 
 reliabilityFrontiersLoadType = {}
 loadProfileNames = [
-    'constant', 'representative', 'dayHeavy', 'nightHeavy', 'smallIndia'#,
-    # 'mediumHouseholds', 'saGrid', 'loadZim', 'homeBusiness', 'onlyBusinesses'
+    'constant', 'representative', 'dayHeavy', 'nightHeavy', 'smallIndia',
+    'mediumHouseholds',
+    # 'saGrid', 'loadZim',
+    'homeBusiness'#, 'onlyBusinesses'
 ]
 resolution = 1
 for lpn in loadProfileNames:
